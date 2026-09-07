@@ -55,7 +55,7 @@ def read_emails_app_password(
     email_address: str, app_password: str, provider: str, tmp_path: Path
 ) -> Path | None:
     try:
-        with imaplib.IMAP4_SSL("imap.gmail.com") as mail:
+        with imaplib.IMAP4_SSL("imap.gmail.com", timeout=10) as mail:
             try:
                 mail.login(email_address, app_password)
             except imaplib.IMAP4.error as e:
@@ -96,7 +96,7 @@ def read_emails_app_password(
 
 def read_emails_oauth(
     email_address: str, provider: str, tmp_path: Path, creds: Any
-) -> Path | None:
+) -> Path:
     auth_string = f"user={email_address}\x01auth=Bearer {creds.token}\x01"
     first_call = True
 
@@ -108,7 +108,7 @@ def read_emails_oauth(
         return b""
 
     try:
-        with imaplib.IMAP4_SSL("imap.gmail.com") as mail:
+        with imaplib.IMAP4_SSL("imap.gmail.com", timeout=10) as mail:
             try:
                 mail.authenticate("XOAUTH2", xoauth2)
             except imaplib.IMAP4.error as e:

@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def get_credentials(
     token_path: Path, credentials_path: Path, scopes: list[str]
-) -> google.oauth2.credentials.Credentials | None:
+) -> google.oauth2.credentials.Credentials:
     try:
         from google.auth.exceptions import TransportError
         from google.auth.transport.requests import Request
@@ -78,7 +78,7 @@ def parse_pull_list_date(text: str | None) -> str | None:
     return date.strftime("%Y-%m-%d")
 
 
-def save_pull_list(tmp_path: Path, subject: str, html_body: str) -> Path | None:
+def save_pull_list(tmp_path: Path, subject: str, html_body: str) -> Path:
     """Shared sink: the ONE place that touches the filesystem.
 
     Policy (identical for both backends):

@@ -5,3 +5,5 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("\nAborting...")
+    except EOFError:
+        print("\nAborting...")

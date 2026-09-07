@@ -1,5 +1,6 @@
 import argparse
 import logging
+from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from sys import stdout
 
@@ -54,7 +55,7 @@ def main():
     # Handler 2: Log File (always writes everything, even DEBUG)
     log_path = Path(__file__).resolve().parents[2] / "logs/komickers.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
-    file_handler = logging.FileHandler(log_path)
+    file_handler = RotatingFileHandler(log_path, maxBytes=10000, backupCount=3)
     file_handler.setLevel(logging.DEBUG)
     file_format = logging.Formatter(
         "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
@@ -111,4 +112,4 @@ def main():
                     "\n==============================\n"
                 )
 
-    print("Aborting...")
+    print("Excelsior!")

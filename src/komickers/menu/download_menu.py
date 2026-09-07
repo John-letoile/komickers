@@ -23,6 +23,13 @@ def download_menu(config: dict) -> None:
         print("\n======================================================\n")
         return
 
+    if not index_dir.is_dir():
+        print(
+            "The provided directory for temporary files is not a directory. Aborting..."
+        )
+        print("\n======================================================\n")
+        return
+
     with open(pull_list_path, "r", encoding="utf-8") as f:
         names: list[str] = [line.rstrip() for line in f if line.strip()]
 

@@ -574,8 +574,6 @@ dependencies = [
     { name = "beautifulsoup4" },
     { name = "httplib2" },
     { name = "httpx" },
-    { name = "mypy" },
-    { name = "ruff" },
     { name = "tomlkit" },
 ]
 
@@ -611,10 +609,8 @@ requires-dist = [
     { name = "httplib2", specifier = ">=0.31.0" },
     { name = "httpx", specifier = ">=0.28.1" },
     { name = "komickers", extras = ["dev", "google"], marker = "extra == 'all'" },
-    { name = "mypy", specifier = ">=2.3.1" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=2.3.0" },
+    { name = "mypy", marker = "extra == 'dev'", specifier = ">=2.3.1" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0.0" },
-    { name = "ruff", specifier = ">=0.16.5" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.16.5" },
     { name = "tomlkit", specifier = ">=0.15.1" },
 ]

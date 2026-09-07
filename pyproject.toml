@@ -14,13 +14,11 @@ dependencies = [
     "beautifulsoup4>=4.15.0",
     "httplib2>=0.31.0",
     "httpx>=0.28.1",
-    "mypy>=2.3.1",
-    "ruff>=0.16.5",
     "tomlkit>=0.15.1",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest >= 7.0.0", "ruff >= 0.16.5", "mypy >= 2.3.0"]
+dev = ["pytest >= 7.0.0", "ruff >= 0.16.5", "mypy >= 2.3.1"]
 
 google = [
     "google-api-core>=2.26.0",

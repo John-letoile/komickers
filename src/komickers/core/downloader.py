@@ -22,7 +22,7 @@ class Inventory:
 
 def save_html_file(
     comic_name: str, comic_name_formatted: str, pull_list_path: Path
-) -> Path | None:
+) -> Path:
     url: str = f"https://getcomics.org/marvel{comic_name_formatted}"
     tmp_html_dir: Path = pull_list_path / "comics_indexes"
     tmp_html_dir.mkdir(parents=True, exist_ok=True)
@@ -31,7 +31,9 @@ def save_html_file(
 
     with httpx.Client() as client:
         try:
-            response: httpx.Response = client.get(url, follow_redirects=True)
+            response: httpx.Response = client.get(
+                url, follow_redirects=True, timeout=10
+            )
             response.raise_for_status()
 
         except httpx.HTTPError as httpe:
@@ -117,7 +119,7 @@ def download_comics(urls_file_path: Path, inbox_dir: Path, method: str) -> None:
         elif method.lower() == "surge":
             download_comics_surgeDM(urls_file_path, inbox_dir)
         else:
-            raise ValueError("Please select one of the available download methods")
+            raise DownloaderError("Please select one of the available download methods")
 
     except subprocess.CalledProcessError as e:
         logger.debug(
@@ -141,7 +143,7 @@ def _log_missed_comics(missed_comics: list[str], missed_file: TextIO, comic: str
 
 def extract_comics_from_file(
     pull_list_path: Path, pull_list: list[tuple[str, str]]
-) -> Inventory | None:
+) -> Inventory:
     missed_comics: list[str] = []
     pulled_comics: list[str] = []
 
@@ -164,19 +166,19 @@ def extract_comics_from_file(
             try:
                 comic_html_file = save_html_file(comic[0], comic[1], pull_list_path)
 
-                if comic_html_file is None:
-                    logger.warning("Couldn't find page for '%s'", comic[0])
-                    _log_missed_comics(missed_comics, missed_file, comic[0])
-                    continue
+                # if comic_html_file is None:
+                #     logger.warning("Couldn't find page for '%s'", comic[0])
+                #     _log_missed_comics(missed_comics, missed_file, comic[0])
+                #     continue
 
                 logger.info("Found page. Extracting download link for '%s'", comic[0])
 
                 extracted_comic_link = extract_download_link(comic_html_file)
 
-                if extracted_comic_link is None:
-                    logger.warning("Couldn't extract download link for '%s'", comic[0])
-                    _log_missed_comics(missed_comics, missed_file, comic[0])
-                    continue
+                # if extracted_comic_link is None:
+                #     logger.warning("Couldn't extract download link for '%s'", comic[0])
+                #     _log_missed_comics(missed_comics, missed_file, comic[0])
+                #     continue
 
                 logger.info("Successfully extracted download link for '%s'", comic[0])
                 pulled_comics.append(comic[0])
@@ -188,7 +190,7 @@ def extract_comics_from_file(
                 _log_missed_comics(missed_comics, missed_file, comic[0])
 
             except ExtractionError as ee:
-                logger.info(ee)
+                logger.warning(ee)
                 _log_missed_comics(missed_comics, missed_file, comic[0])
 
     return Inventory(pulled_comics, missed_comics, extracted_urls_path)

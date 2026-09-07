@@ -27,7 +27,7 @@ def formatter(year: str, line: str) -> str:
     return f"/{translated_line.lower()}-{year}/"
 
 
-def extract_names(file_path: Path) -> list[tuple[str, str]] | None:
+def extract_names(file_path: Path) -> list[tuple[str, str]]:
     list_of_comics: list[tuple[str, str]] = []
     year: str = get_year(file_path)
 
@@ -69,7 +69,7 @@ def extract_names(file_path: Path) -> list[tuple[str, str]] | None:
     return list_of_comics
 
 
-def extract_download_link(file_path: Path) -> str | None:
+def extract_download_link(file_path: Path) -> str:
     with open(file_path, "r", encoding="utf-8") as f:
         soup = BeautifulSoup(f, "html.parser")
 
@@ -88,7 +88,7 @@ def extract_download_link(file_path: Path) -> str | None:
 
     server_side_url: str | None = None
     with httpx.Client() as client:
-        response: httpx.Response = client.head(download_url)
+        response: httpx.Response = client.head(download_url, timeout=10)
 
         if response.status_code == 302:
             server_side_url = response.headers.get("location")
@@ -102,8 +102,6 @@ def extract_download_link(file_path: Path) -> str | None:
             raise ExtractionError(
                 f"Failed to extract download link for {file_path.name}"
             ) from None
-
-        # Get the output and error message (if any)
 
     if server_side_url is None:
         logger.warning("The server response missed a 'location' field")
