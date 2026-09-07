@@ -4,6 +4,8 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 from sys import stdout
 
+from platformdirs import PlatformDirs
+
 from komickers.exceptions import ConfigError
 
 from .config import load_config
@@ -21,7 +23,8 @@ class NoTracebackFilter(logging.Filter):
 
 
 def main():
-    # Arguement Parser
+    dirs = PlatformDirs(appname="komickers", appauthor=False)
+    # Argument Parser
     parser = argparse.ArgumentParser(
         description="Komickers - comic download automation"
     )
@@ -53,7 +56,7 @@ def main():
     logger.addHandler(console_handler)
 
     # Handler 2: Log File (always writes everything, even DEBUG)
-    log_path = Path(__file__).resolve().parents[2] / "logs/komickers.log"
+    log_path = Path(dirs.user_log_dir) / "komickers.log"
     log_path.parent.mkdir(parents=True, exist_ok=True)
     file_handler = RotatingFileHandler(log_path, maxBytes=10000, backupCount=3)
     file_handler.setLevel(logging.DEBUG)
@@ -89,19 +92,19 @@ def main():
 
     while True:
         print(
-            "c) Change Config\np) Pull latest pull list\nd) Download pull list\nq) Quit\n"
+            "1) Change Config\n2) Pull latest pull list\n3) Download pull list\nq) Quit\n"
         )
         menu_selection = input("please select a menu: ")
         match menu_selection:
-            case "c":
+            case "1":
                 config_menu()
                 try:
                     config = load_config()
                 except ConfigError as ce:
                     print(ce)
-            case "p":
+            case "2":
                 pull_list_menu(config)
-            case "d":
+            case "3":
                 download_menu(config)
             case "q":
                 break

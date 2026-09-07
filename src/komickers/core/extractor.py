@@ -1,9 +1,8 @@
 import logging
 import re
-import subprocess
 from pathlib import Path
-import httpx
 
+import httpx
 from bs4 import BeautifulSoup
 
 from komickers.exceptions import ExtractionError
@@ -88,11 +87,9 @@ def extract_download_link(file_path: Path) -> str:
 
     server_side_url: str | None = None
     with httpx.Client() as client:
-        response: httpx.Response = client.head(download_url, timeout=10)
-
-        if response.status_code == 302:
+        response = client.head(download_url, follow_redirects=False, timeout=10)
+        if response.status_code in (301, 302, 303, 307, 308):
             server_side_url = response.headers.get("location")
-
         else:
             logger.error(
                 "Failed to extract download link for %s: %d",

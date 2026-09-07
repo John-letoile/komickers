@@ -1,24 +1,59 @@
 import copy
 import logging
+import os
 from pathlib import Path
 
 import tomlkit
+from platformdirs import PlatformDirs
 
 from komickers.exceptions import ConfigError
 
 logger = logging.getLogger(__name__)
 
+_dirs = PlatformDirs(appname="komickers", appauthor=False)
+
+
+def _config_path() -> Path:
+    """Platform-correct location of the config file (Linux, Windows, macOS)."""
+    return Path(_dirs.user_config_dir) / "komickers.toml"
+
+
+def resolve_dir(value: str, *, create: bool = True) -> Path:
+    """Turn a config string into an absolute, usable directory Path.
+
+    - Expands '~' and environment variables ($VAR on POSIX, %VAR% on Windows)
+    - Anchors relative paths to the app's platform data directory so the
+      result never depends on the current working directory or install location
+    - Creates the directory (and parents) unless create=False
+    - Raises ConfigError early if the value is empty or cannot be created
+    """
+    if not value or not value.strip():
+        raise ConfigError("Config directory value is empty")
+
+    path = Path(os.path.expandvars(value)).expanduser()
+
+    if not path.is_absolute():
+        path = Path(_dirs.user_data_dir) / path
+
+    if create:
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except OSError as e:
+            raise ConfigError(f"Cannot create directory {path}: {e}") from e
+
+    return path
+
 
 def _default_config() -> dict:
-    project_root = Path(__file__).resolve().parents[2]
+    dirs = PlatformDirs(appname="komickers", appauthor=False)
     return {
         "directories": {
-            "tmp_dir": str(project_root / ".tmp"),
-            "credentials_dir": str(project_root / "credentials"),
-            "token_dir": str(project_root / "token"),
+            "tmp_dir": str(Path(dirs.user_cache_dir) / ".tmp"),
+            "credentials_dir": str(Path(dirs.user_config_dir)),
+            "token_dir": str(Path(dirs.user_cache_dir) / "token"),
         },
         "download": {
-            "downloads_dir": str(project_root / "inbox"),
+            "downloads_dir": str(Path(dirs.user_downloads_dir) / "Komickers"),
             "download_manager": "surge",
         },
         "email": {
@@ -41,7 +76,7 @@ def _deep_merge(base: dict, override: dict) -> dict:
 
 
 def load_config() -> dict:
-    path = Path(__file__).resolve().parents[2] / ".config/komickers.toml"
+    path = _config_path()
     if not path.exists():
         return _default_config()
 
@@ -61,7 +96,7 @@ def _validate_config(config: dict) -> bool:
 
 
 def save_config(config: dict) -> None:
-    path = Path(__file__).resolve().parents[2] / ".config/komickers.toml"
+    path = _config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w", encoding="utf-8") as f:
         tomlkit.dump(config, f)

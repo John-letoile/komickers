@@ -59,7 +59,7 @@ def _gmail_html(payload: dict) -> str | None:
     return None
 
 
-def read_emails(creds: Any, tmp_path: Path) -> Path | None:
+def read_emails(creds: Any, tmp_path: Path) -> Path:
     try:
         from google.auth.exceptions import RefreshError
         from googleapiclient.errors import HttpError

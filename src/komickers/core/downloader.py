@@ -4,6 +4,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TextIO
+
 import httpx
 
 from komickers.exceptions import DownloaderError, ExtractionError
@@ -28,6 +29,10 @@ def save_html_file(
     tmp_html_dir.mkdir(parents=True, exist_ok=True)
 
     file_path: Path = tmp_html_dir / f"{comic_name_formatted[1:-1]}.html"
+
+    if file_path.exists():
+        logger.info("the HTML file for '%s' already exists. Skipping...", comic_name)
+        return file_path
 
     with httpx.Client() as client:
         try:
@@ -165,29 +170,12 @@ def extract_comics_from_file(
             logger.info("Trying to find '%s'", comic[0])
             try:
                 comic_html_file = save_html_file(comic[0], comic[1], pull_list_path)
-
-                # if comic_html_file is None:
-                #     logger.warning("Couldn't find page for '%s'", comic[0])
-                #     _log_missed_comics(missed_comics, missed_file, comic[0])
-                #     continue
-
                 logger.info("Found page. Extracting download link for '%s'", comic[0])
-
                 extracted_comic_link = extract_download_link(comic_html_file)
-
-                # if extracted_comic_link is None:
-                #     logger.warning("Couldn't extract download link for '%s'", comic[0])
-                #     _log_missed_comics(missed_comics, missed_file, comic[0])
-                #     continue
-
                 logger.info("Successfully extracted download link for '%s'", comic[0])
                 pulled_comics.append(comic[0])
                 pulled_file.write(f"{extracted_comic_link}\n")
                 print("\n-------------------------****-------------------------\n")
-
-            except FileNotFoundError:
-                logger.info("Couldn't find the file")
-                _log_missed_comics(missed_comics, missed_file, comic[0])
 
             except ExtractionError as ee:
                 logger.warning(ee)

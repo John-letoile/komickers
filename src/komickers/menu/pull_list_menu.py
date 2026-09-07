@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from komickers.config import resolve_dir
 from komickers.core.downloader import (
     Inventory,
     download_from_inventory,
@@ -16,18 +17,22 @@ from komickers.mail_reader.reader import read_emails
 
 def pull_list_menu(config: dict) -> None:
     print("\n=================== PULL LIST MENU ===================\n")
-    tmp_path: Path = Path(config["directories"]["tmp_dir"])
-    tmp_path.mkdir(parents=True, exist_ok=True)
+    resolve_dir(config["directories"]["tmp_dir"])
 
     pull_list_path: Path | None = None
     pulled: bool = False
     while not pulled:
         try:
             print(
-                "Please select your preferred method of logging in:\ng) Google API\ni) IMAP\n"
+                "Please select your preferred method of logging in:\n1) Google API\n2) IMAP\nq) Quit"
             )
-            login_method: str = input("your selection: ")
-            pull_list_path = read_emails(config, login_method)
+            selection: str = input("your selection: ")
+            if selection == "q":
+                print("Returning to the main menu...")
+                print("\n======================================================\n")
+                return
+
+            pull_list_path = read_emails(config, selection)
             pulled = True
 
         except AuthenticationError as ae:
@@ -49,6 +54,9 @@ def pull_list_menu(config: dict) -> None:
 
         except ImportError as ie:
             print(ie)
+            selection = input("\nWould you like to download the dependencies? [N/y]")
+            if selection in {"y", "yes"}:
+                ...
 
     if pull_list_path is None:
         print("Couldn't determine the path of the pull list. Aborting...")
@@ -56,7 +64,7 @@ def pull_list_menu(config: dict) -> None:
         return
 
     index_path: Path = pull_list_path / "index.html"
-    inbox_path: Path = Path(config["download"]["downloads_dir"])
+    inbox_path: Path = resolve_dir(config["download"]["downloads_dir"])
     method: str = config["download"]["download_manager"]
     pull_list: list[tuple[str, str]] | None = extract_names(index_path)
 

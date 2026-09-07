@@ -53,7 +53,7 @@ def _fetch_latest_imap(mail: imaplib.IMAP4_SSL, provider: str) -> FetchedEmail |
 
 def read_emails_app_password(
     email_address: str, app_password: str, provider: str, tmp_path: Path
-) -> Path | None:
+) -> Path:
     try:
         with imaplib.IMAP4_SSL("imap.gmail.com", timeout=10) as mail:
             try:

@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from komickers.config import resolve_dir
 from komickers.core.downloader import (
     Inventory,
     download_from_inventory,
@@ -35,9 +36,10 @@ def download_menu(config: dict) -> None:
 
     index_dir.mkdir(parents=True, exist_ok=True)
     pull_list: list[tuple[str, str]] = [(name, formatter(year, name)) for name in names]
-    inbox_path = Path(config["download"]["downloads_dir"])
+    inbox_path = resolve_dir(config["download"]["downloads_dir"])
     method = config["download"]["download_manager"]
-    inventory: Inventory | None = extract_comics_from_file(index_dir, pull_list)
+
+    inventory: Inventory = extract_comics_from_file(index_dir, pull_list)
 
     if inventory is None:
         print("An error occured while extracting download links...")
