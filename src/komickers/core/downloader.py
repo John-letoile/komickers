@@ -88,23 +88,41 @@ def download_comics_uget(urls_file_path: Path, inbox_dir: Path) -> None:
 
 
 def download_comics_wget2(urls_file_path: Path, inbox_dir: Path) -> None:
+    """Shell-free, platform-independent, strictly sequential wget2 download.
+    Reads the URL file in Python and invokes wget2 once per URL.
+    Nothing runs in parallel.
+    """
+
     logger.info("Downloading...")
-    subprocess.run(
-        [
-            f"cat{urls_file_path}",
-            "|",
-            "xargs",
-            "-n3",
-            "-P1",
-            "wget2",
-            "-q",
-            "--force-progress",
-            "--trust-server-names",
-            "-P",
-            inbox_dir,
-        ],
-        check=True,
-    )
+
+    list_of_urls: list[str] = [
+        line.strip()
+        for line in urls_file_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+
+    for url in list_of_urls:
+        logger.info("Downloading %s", url)
+        try:
+            subprocess.run(
+                [
+                    "wget2",
+                    "--force-progress",
+                    "--trust-server-names",
+                    "-P",
+                    str(inbox_dir),
+                    url,
+                ],
+                check=True,
+            )
+        except FileNotFoundError as e:
+            logger.debug("wget2 missing: %s", e, exc_info=True)
+            raise DownloaderError("Download manager 'wget2' missing") from e
+        except subprocess.CalledProcessError as e:
+            logger.debug(
+                "wget2 exited with code %d for %s", e.returncode, url, exc_info=True
+            )
+            raise DownloaderError(f"Download manager 'wget2' failed for {url}") from e
 
 
 def download_comics_surgeDM(urls_file_path: Path, inbox_dir: Path) -> None:
@@ -171,7 +189,7 @@ def extract_comics_from_file(
             try:
                 comic_html_file = save_html_file(comic[0], comic[1], pull_list_path)
                 logger.info("Found page. Extracting download link for '%s'", comic[0])
-                extracted_comic_link = extract_download_link(comic_html_file)
+                extracted_comic_link = extract_download_link(comic_html_file, comic[0])
                 logger.info("Successfully extracted download link for '%s'", comic[0])
                 pulled_comics.append(comic[0])
                 pulled_file.write(f"{extracted_comic_link}\n")

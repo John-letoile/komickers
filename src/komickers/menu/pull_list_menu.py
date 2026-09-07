@@ -24,7 +24,7 @@ def pull_list_menu(config: dict) -> None:
     while not pulled:
         try:
             print(
-                "Please select your preferred method of logging in:\n1) Google API\n2) IMAP\nq) Quit"
+                "Please select your preferred method of logging in:\n1) Google API\n2) IMAP\nq) Quit\n"
             )
             selection: str = input("your selection: ")
             if selection == "q":

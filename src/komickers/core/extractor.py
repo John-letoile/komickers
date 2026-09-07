@@ -68,7 +68,7 @@ def extract_names(file_path: Path) -> list[tuple[str, str]]:
     return list_of_comics
 
 
-def extract_download_link(file_path: Path) -> str:
+def extract_download_link(file_path: Path, comic_name: str) -> str:
     with open(file_path, "r", encoding="utf-8") as f:
         soup = BeautifulSoup(f, "html.parser")
 
@@ -91,13 +91,13 @@ def extract_download_link(file_path: Path) -> str:
         if response.status_code in (301, 302, 303, 307, 308):
             server_side_url = response.headers.get("location")
         else:
-            logger.error(
+            logger.debug(
                 "Failed to extract download link for %s: %d",
                 file_path,
                 response.status_code,
             )
             raise ExtractionError(
-                f"Failed to extract download link for {file_path.name}"
+                f"Failed to extract download link for '{comic_name}'"
             ) from None
 
     if server_side_url is None:
