@@ -2,13 +2,13 @@ import argparse
 import logging
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-from sys import stdout
+import sys
 
 from platformdirs import PlatformDirs
 
 from komickers.exceptions import ConfigError
 
-from .config import load_config
+from .config import load_config, Config
 from .menu.config_menu import config_menu
 from .menu.download_menu import download_menu
 from .menu.pull_list_menu import pull_list_menu
@@ -48,7 +48,7 @@ def main():
     logging.getLogger("httpx").setLevel(logging.WARNING)
 
     # Handler 1: Console (only shows INFO and above, respects user's -v flag)
-    console_handler = logging.StreamHandler(stdout)
+    console_handler = logging.StreamHandler(sys.stdout)
     console_handler.setLevel(logging.DEBUG if args.verbose else logging.INFO)
     console_format = logging.Formatter("%(message)s")
     console_handler.setFormatter(console_format)
@@ -68,10 +68,11 @@ def main():
 
     # Load Config File
     try:
-        config: dict = load_config()
+        config: Config = load_config()
     except ConfigError as ce:
+        logger.debug("Invalid config: %s", ce, exc_info=True)
         print(ce)
-        return
+        sys.exit(1)
 
     print("""
          ██ ▄█▀ ▒█████   ███▄ ▄███▓ ██▓ ▄████▄   ██ ▄█▀▓█████  ██▀███    ██████ 

@@ -63,10 +63,6 @@ htmlcov/
 .venv/
 
 # Local artifacts
-.tmp/
-.config/
-inbox/
-credentials/
-token/
 agent/
-logs/
+assets/
+scripts/

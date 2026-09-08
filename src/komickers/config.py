@@ -1,6 +1,6 @@
-import copy
 import logging
 import os
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import tomlkit
@@ -11,6 +11,37 @@ from komickers.exceptions import ConfigError
 logger = logging.getLogger(__name__)
 
 _dirs = PlatformDirs(appname="komickers", appauthor=False)
+
+
+@dataclass
+class DirectoriesConfig:
+    tmp_dir: str = str(Path(_dirs.user_cache_dir) / ".tmp")
+    credentials_dir: str = str(_dirs.user_config_dir)
+    token_dir: str = str(Path(_dirs.user_cache_dir) / "token")
+
+
+@dataclass
+class DownloadConfig:
+    downloads_dir: str = str(Path(_dirs.user_downloads_dir) / "Komickers")
+    download_manager: str = "surge"
+
+
+@dataclass
+class EmailConfig:
+    scopes: list[str] = field(default_factory=lambda: ["https://mail.google.com/"])
+    email_address: str = ""
+    provider: str = "noreply@leagueofcomicgeeks.com"
+    app_password: str = ""
+
+
+@dataclass
+class Config:
+    directories: DirectoriesConfig = field(default_factory=DirectoriesConfig)
+    download: DownloadConfig = field(default_factory=DownloadConfig)
+    email: EmailConfig = field(default_factory=EmailConfig)
+
+    def to_dict(self) -> dict:
+        return asdict(self)
 
 
 def _config_path() -> Path:
@@ -44,67 +75,38 @@ def resolve_dir(value: str, *, create: bool = True) -> Path:
     return path
 
 
-def _default_config() -> dict:
-    dirs = PlatformDirs(appname="komickers", appauthor=False)
-    return {
-        "directories": {
-            "tmp_dir": str(Path(dirs.user_cache_dir) / ".tmp"),
-            "credentials_dir": str(Path(dirs.user_config_dir)),
-            "token_dir": str(Path(dirs.user_cache_dir) / "token"),
-        },
-        "download": {
-            "downloads_dir": str(Path(dirs.user_downloads_dir) / "Komickers"),
-            "download_manager": "surge",
-        },
-        "email": {
-            "scopes": ["https://mail.google.com/"],
-            "email_address": "",
-            "provider": "noreply@leagueofcomicgeeks.com",
-            "app_password": "",
-        },
-    }
+def _from_dict(data: dict) -> Config:
+    try:
+        return Config(
+            directories=DirectoriesConfig(**data.get("directories", {})),
+            download=DownloadConfig(**data.get("download", {})),
+            email=EmailConfig(**data.get("email", {})),
+        )
+    except TypeError as e:
+        raise ConfigError(f"Invalid configuration: {e}") from e
 
 
-def _deep_merge(base: dict, override: dict) -> dict:
-    result = copy.deepcopy(base)
-    for key, value in override.items():
-        if key in result and isinstance(result[key], dict) and isinstance(value, dict):
-            result[key] = _deep_merge(result[key], value)
-        else:
-            result[key] = value
-    return result
-
-
-def load_config() -> dict:
+def load_config() -> Config:
     path = _config_path()
     if not path.exists():
-        return _default_config()
+        return Config()
 
     with open(path, "r", encoding="utf-8") as f:
         data = tomlkit.load(f)
 
-    if not _validate_config(data):
-        logger.error("Invalid configuration")
-        raise ConfigError("Invalid configuration")
-
-    return _deep_merge(_default_config(), data)
+    return _from_dict(data)
 
 
-# TODO: implement a config valdiator (via a schema)
-def _validate_config(config: dict) -> bool:
-    return True
-
-
-def save_config(config: dict) -> None:
+def save_config(config: Config) -> None:
     path = _config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
+
     with open(path, "w", encoding="utf-8") as f:
-        tomlkit.dump(config, f)
+        tomlkit.dump(config.to_dict(), f)
 
 
 def update_config(**kwargs) -> None:
-    config = load_config()
-    default_config = _default_config()
+    config = load_config().to_dict()
 
     valid_keys = {
         "tmp_dir": ("directories", "tmp_dir"),
@@ -121,11 +123,10 @@ def update_config(**kwargs) -> None:
     for key, value in kwargs.items():
         if key in valid_keys:
             section, subkey = valid_keys[key]
-            config[section][subkey] = (
-                default_config[section][subkey] if value == "" else value
-            )
+            config[section][subkey] = value
+
         else:
             logger.error("Invalid configuration: %s", key)
             raise ConfigError(f"Invalid configuration key: {key}")
 
-    save_config(config)
+    save_config(_from_dict(config))

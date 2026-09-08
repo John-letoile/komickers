@@ -126,11 +126,15 @@ def download_comics_wget2(urls_file_path: Path, inbox_dir: Path) -> None:
 
 
 def download_comics_surgeDM(urls_file_path: Path, inbox_dir: Path) -> None:
-    logger.info("Downloading...")
-    subprocess.run(
-        ["surge", "--batch", urls_file_path, "--output", inbox_dir],
-        check=True,
-    )
+    try:
+        logger.info("Downloading...")
+        subprocess.run(
+            ["surge", "--batch", urls_file_path, "--output", inbox_dir],
+            check=True,
+        )
+    except FileNotFoundError as fnfe:
+        logger.debug("Missing the 'surge' download manager: %s", fnfe)
+        raise DownloaderError("Missing the 'surge' download manager")
 
 
 def download_comics(urls_file_path: Path, inbox_dir: Path, method: str) -> None:

@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from komickers.config import resolve_dir
+from komickers.config import Config, resolve_dir
 from komickers.core.downloader import (
     Inventory,
     download_from_inventory,
@@ -11,13 +11,14 @@ from komickers.exceptions import (
     AuthenticationError,
     DownloaderError,
     EmailError,
+    ExtractionError,
 )
 from komickers.mail_reader.reader import read_emails
 
 
-def pull_list_menu(config: dict) -> None:
+def pull_list_menu(config: Config) -> None:
     print("\n=================== PULL LIST MENU ===================\n")
-    resolve_dir(config["directories"]["tmp_dir"])
+    resolve_dir(config.directories.tmp_dir)
 
     pull_list_path: Path | None = None
     pulled: bool = False
@@ -64,24 +65,17 @@ def pull_list_menu(config: dict) -> None:
         return
 
     index_path: Path = pull_list_path / "index.html"
-    inbox_path: Path = resolve_dir(config["download"]["downloads_dir"])
-    method: str = config["download"]["download_manager"]
-    pull_list: list[tuple[str, str]] | None = extract_names(index_path)
-
-    if pull_list is None:
-        print("Couldn't extract comic names. Aborting...")
-        print("\n======================================================\n")
-        return
-
-    inventory: Inventory | None = extract_comics_from_file(pull_list_path, pull_list)
-
-    if inventory is None:
-        print("An error occured while extracting download links...")
-        print("\n======================================================\n")
-        return
+    inbox_path: Path = resolve_dir(config.download.downloads_dir)
+    method: str = config.download.download_manager
 
     try:
+        pull_list: list[tuple[str, str]] = extract_names(index_path)
+        inventory: Inventory = extract_comics_from_file(pull_list_path, pull_list)
         download_from_inventory(inventory, inbox_path, method)
+
     except DownloaderError as de:
         print(de)
+        print("\n======================================================\n")
+    except ExtractionError as ee:
+        print(ee)
         print("\n======================================================\n")
