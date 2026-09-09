@@ -11,8 +11,8 @@ logger = logging.getLogger(__name__)
 SPECIAL_CHARACTERS: tuple[str, ...] = ("#", "(", ")", "!", "?", ":")
 
 
-def get_year(file_path: Path) -> str:
-    return file_path.parent.name[:4]
+def get_year(pull_list_name: str) -> str:
+    return pull_list_name[:4]
 
 
 def formatter(year: str, line: str) -> str:
@@ -26,9 +26,11 @@ def formatter(year: str, line: str) -> str:
     return f"/{translated_line.lower()}-{year}/"
 
 
-def extract_names(file_path: Path) -> list[tuple[str, str]]:
+def extract_names(file_path: Path, tmp_path: Path) -> list[tuple[str, str]]:
     list_of_comics: list[tuple[str, str]] = []
-    year: str = get_year(file_path)
+    pull_list_path: Path = tmp_path / "pull_list.txt"
+    pull_list_path.write_text("")
+    year: str = get_year(file_path.parent.name)
 
     with open(file_path, "r", encoding="utf-8") as f:
         soup = BeautifulSoup(f, "html.parser")
@@ -55,17 +57,43 @@ def extract_names(file_path: Path) -> list[tuple[str, str]]:
             f"Failed to find 'Pull List' container in {file_path}"
         ) from None
 
-    for link in section.find_all("a", href=True):
-        href = link["href"]
-        if "/comic/" not in href:
-            continue
+    with open(pull_list_path, "w", encoding="utf-8") as pull_list:
+        for link in section.find_all("a", href=True):
+            href = link["href"]
+            if "/comic/" not in href:
+                continue
 
-        title = link.get("title")
+            title = link.get("title")
 
-        if title:
-            list_of_comics.append((str(title), formatter(year, str(title))))
+            if title:
+                pull_list.write(str(title) + "\n")
+                list_of_comics.append((str(title), formatter(year, str(title))))
 
     return list_of_comics
+
+
+def extract_selection_from_pull_list(
+    pull_list: list[tuple[str, str]], selection_list: list[int], tmp_path: Path
+) -> Path:
+    selection_path: Path = tmp_path / "selection.txt"
+
+    with open(selection_path, "w", encoding="utf-8") as selection:
+        selection.writelines(str(pull_list[i][0]) + "\n" for i in selection_list)
+
+    return selection_path
+
+
+def extract_selection_list_from_file(
+    selection_path: Path, year
+) -> list[tuple[str, str]]:
+    with open(selection_path, "r", encoding="utf-8") as selection:
+        names: list[tuple[str, str]] = [
+            (line.rstrip(), formatter(year, line.rstrip()))
+            for line in selection
+            if line.strip()
+        ]
+
+    return names
 
 
 def extract_download_link(file_path: Path, comic_name: str) -> str:

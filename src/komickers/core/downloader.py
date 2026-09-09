@@ -16,9 +16,9 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class Inventory:
-    pulled: list[str]
-    missed: list[str]
-    urls_path: Path
+    hits: list[str]
+    misses: list[str]
+    hits_path: Path
 
 
 def save_html_file(
@@ -169,20 +169,20 @@ def _log_missed_comics(missed_comics: list[str], missed_file: TextIO, comic: str
 
 
 def extract_comics_from_file(
-    pull_list_path: Path, pull_list: list[tuple[str, str]]
+    tmp_path: Path, pull_list: list[tuple[str, str]]
 ) -> Inventory:
-    missed_comics: list[str] = []
-    pulled_comics: list[str] = []
+    misses: list[str] = []
+    hits: list[str] = []
 
-    extracted_urls_path = pull_list_path / "pulled_list.txt"
-    missed_path = pull_list_path / "missed_list.txt"
+    hits_path = tmp_path / "hits.txt"
+    missed_path = tmp_path / "misses.txt"
 
     # clean up files before writing to them
-    extracted_urls_path.write_text("")
+    hits_path.write_text("")
     missed_path.write_text("")
 
     with (
-        extracted_urls_path.open("a", encoding="utf-8") as pulled_file,
+        hits_path.open("a", encoding="utf-8") as pulled_file,
         missed_path.open("a", encoding="utf-8") as missed_file,
     ):
         logger.info("Extracting download links...")
@@ -191,35 +191,35 @@ def extract_comics_from_file(
         for comic in pull_list:
             logger.info("Trying to find '%s'", comic[0])
             try:
-                comic_html_file = save_html_file(comic[0], comic[1], pull_list_path)
+                comic_html_file = save_html_file(comic[0], comic[1], tmp_path)
                 logger.info("Found page. Extracting download link for '%s'", comic[0])
                 extracted_comic_link = extract_download_link(comic_html_file, comic[0])
                 logger.info("Successfully extracted download link for '%s'", comic[0])
-                pulled_comics.append(comic[0])
+                hits.append(comic[0])
                 pulled_file.write(f"{extracted_comic_link}\n")
                 print("\n-------------------------****-------------------------\n")
 
             except ExtractionError as ee:
                 logger.warning(ee)
-                _log_missed_comics(missed_comics, missed_file, comic[0])
+                _log_missed_comics(misses, missed_file, comic[0])
 
-    return Inventory(pulled_comics, missed_comics, extracted_urls_path)
+    return Inventory(hits, misses, hits_path)
 
 
 def download_from_inventory(
     comics_inventory: Inventory, inbox_path: Path, method: str
 ) -> None:
 
-    pulled_comics: list[str] = comics_inventory.pulled
-    missed_comics: list[str] = comics_inventory.missed
-    extracted_urls_path: Path = comics_inventory.urls_path
+    pulled_comics: list[str] = comics_inventory.hits
+    missed_comics: list[str] = comics_inventory.misses
+    extracted_urls_path: Path = comics_inventory.hits_path
 
     if len(pulled_comics) == 0:
         logger.info("No comics were pulled. Aborting...")
         print("\n======================================================\n")
         return
 
-    print("The following comics were pulled:")
+    print("The following comics were available:")
     for i, comic in enumerate(pulled_comics, start=1):
         print(f"{i})", comic)
 
@@ -229,8 +229,9 @@ def download_from_inventory(
             print(f"{i})", comic)
 
     print("\n-------------------------****-------------------------\n")
-    download_permission = input("would you like to download these comics [N/y]? ")
-    if download_permission.lower() in {"y", "yes"}:
+    download_permission = input("start downloading [N/y]? ")
+
+    if download_permission.lower() in {"y", "yes", "yep"}:
         inbox_path.mkdir(parents=True, exist_ok=True)
         download_comics(extracted_urls_path, inbox_path, method)
 

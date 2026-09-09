@@ -1,14 +1,14 @@
 import argparse
 import logging
+import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-import sys
 
 from platformdirs import PlatformDirs
 
 from komickers.exceptions import ConfigError
 
-from .config import load_config, Config
+from .config import Config, load_config
 from .menu.config_menu import config_menu
 from .menu.download_menu import download_menu
 from .menu.pull_list_menu import pull_list_menu

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import logging
 import json
+import logging
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -21,10 +21,10 @@ def get_credentials(
     token_path: Path, credentials_path: Path, scopes: list[str]
 ) -> Credentials | None:
     try:
-        from google.auth.exceptions import TransportError, RefreshError
+        from google.auth.exceptions import RefreshError, TransportError
         from google.auth.transport.requests import Request
-        from google_auth_oauthlib.flow import InstalledAppFlow
         from google.oauth2.credentials import Credentials
+        from google_auth_oauthlib.flow import InstalledAppFlow
     except ImportError as e:
         raise ImportError(
             "The 'google' optional dependencies is required to use OAuth2"

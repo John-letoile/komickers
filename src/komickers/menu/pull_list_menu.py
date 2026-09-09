@@ -6,7 +6,12 @@ from komickers.core.downloader import (
     download_from_inventory,
     extract_comics_from_file,
 )
-from komickers.core.extractor import extract_names
+from komickers.core.extractor import (
+    extract_names,
+    extract_selection_from_pull_list,
+    extract_selection_list_from_file,
+    get_year,
+)
 from komickers.exceptions import (
     AuthenticationError,
     DownloaderError,
@@ -69,13 +74,44 @@ def pull_list_menu(config: Config) -> None:
     method: str = config.download.download_manager
 
     try:
-        pull_list: list[tuple[str, str]] = extract_names(index_path)
-        inventory: Inventory = extract_comics_from_file(pull_list_path, pull_list)
-        download_from_inventory(inventory, inbox_path, method)
+        pull_list: list[tuple[str, str]] = extract_names(index_path, inbox_path)
 
-    except DownloaderError as de:
-        print(de)
-        print("\n======================================================\n")
     except ExtractionError as ee:
         print(ee)
+        print("\n======================================================\n")
+        return
+
+    print("The following comics were pulled:")
+    for i, comic in enumerate(pull_list, start=1):
+        print(f"{i})", comic[0])
+
+    selection_input: str = input(
+        "\nprovide the index of the comics to search for (0 for exit, all for all of them): "
+    )
+
+    selection_list: list[int]
+    if selection_input == "0":
+        print("No comics were selected. Aborting...")
+        print("\n======================================================\n")
+        return
+
+    elif selection_input.lower() == "all":
+        selection_list = [i for i in range(len(pull_list))]
+
+    else:
+        selection_list = [int(item.strip()) - 1 for item in selection_input.split(",")]
+
+    selection_path: Path = extract_selection_from_pull_list(
+        pull_list, selection_list, pull_list_path
+    )
+
+    selection_names: list[tuple[str, str]] = extract_selection_list_from_file(
+        selection_path, get_year(pull_list_path.name)
+    )
+
+    try:
+        inventory: Inventory = extract_comics_from_file(pull_list_path, selection_names)
+        download_from_inventory(inventory, inbox_path, method)
+    except DownloaderError as de:
+        print(de)
         print("\n======================================================\n")
