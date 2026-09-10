@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "komickers"
-version = "0.18.5"
+version = "0.4.0"
 description = "Download your comics automatically, using your terminal alone"
 readme = "README.md"
 authors = [{ name = "Arshia Shaygan", email = "arshiashaygan07@gmail.com" }]
