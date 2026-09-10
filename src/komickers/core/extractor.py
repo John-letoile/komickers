@@ -1,5 +1,6 @@
 import logging
 import re
+from datetime import UTC, datetime
 from pathlib import Path
 
 import httpx
@@ -8,10 +9,18 @@ from bs4 import BeautifulSoup
 from komickers.exceptions import ExtractionError
 
 logger = logging.getLogger(__name__)
-SPECIAL_CHARACTERS: tuple[str, ...] = ("#", "(", ")", "!", "?", ":")
+SPECIAL_CHARACTERS: tuple[str, ...] = ("#", "(", ")", "!", "?", ":", "&", '"', "'", "%")
 
 
 def get_year(pull_list_name: str) -> str:
+    try:
+        datetime.strptime(pull_list_name, "%Y-%m-%d").replace(tzinfo=UTC)
+    except ValueError as ve:
+        logger.debug(
+            "Incorrect pull list format '%s': %s", pull_list_name, ve, exc_info=True
+        )
+        raise ExtractionError(f"Incorrect pull list format: {pull_list_name}")
+
     return pull_list_name[:4]
 
 

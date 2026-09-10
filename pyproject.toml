@@ -28,7 +28,7 @@ google = [
     "google-auth-oauthlib>=1.2.2",
 ]
 
-all = ["komickers[dev, google]"]
+all = ["komickers[dev,google]"]
 
 [project.scripts]
 komickers = "komickers.main:main"

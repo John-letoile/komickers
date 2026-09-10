@@ -6,12 +6,11 @@ from pathlib import Path
 
 from platformdirs import PlatformDirs
 
+from komickers.config import Config, load_config
 from komickers.exceptions import ConfigError
-
-from .config import Config, load_config
-from .menu.config_menu import config_menu
-from .menu.download_menu import download_menu
-from .menu.pull_list_menu import pull_list_menu
+from komickers.menu.config_menu import config_menu
+from komickers.menu.download_menu import download_menu
+from komickers.menu.pull_list_menu import pull_list_menu
 
 
 class NoTracebackFilter(logging.Filter):
@@ -23,7 +22,9 @@ class NoTracebackFilter(logging.Filter):
 
 
 def main():
+    # Native platforms
     dirs = PlatformDirs(appname="komickers", appauthor=False)
+
     # Argument Parser
     parser = argparse.ArgumentParser(
         description="Komickers - comic download automation"

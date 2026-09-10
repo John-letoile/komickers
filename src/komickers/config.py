@@ -1,6 +1,8 @@
 import logging
 import os
+import re
 from dataclasses import asdict, dataclass, field
+from enum import Enum
 from pathlib import Path
 
 import tomlkit
@@ -9,8 +11,14 @@ from platformdirs import PlatformDirs
 from komickers.exceptions import ConfigError
 
 logger = logging.getLogger(__name__)
-
 _dirs = PlatformDirs(appname="komickers", appauthor=False)
+EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+
+
+class DownloadManger(Enum):
+    SURGE = 1
+    UGET = 2
+    WGET2 = 3
 
 
 @dataclass
@@ -47,6 +55,33 @@ class Config:
 def _config_path() -> Path:
     """Platform-correct location of the config file (Linux, Windows, macOS)."""
     return Path(_dirs.user_config_dir) / "komickers.toml"
+
+
+def validate(config: Config) -> bool:
+    try:
+        DownloadManger(config.download.download_manager)
+    except ValueError as ve:
+        valid = [download_manager.value for download_manager in DownloadManger]
+        logger.debug("Invalid download manager selection: %s", ve, exc_info=True)
+        raise ConfigError(f"Invalid download manager. Must be one of: {valid}")
+
+    if not EMAIL_REGEX.match(config.email.email_address):
+        logger.debug("Invalid email format: %s", config.email.email_address)
+        raise ConfigError(f"Invalid email format: {config.email.email_address}")
+
+    paths: list[str] = [
+        config.directories.credentials_dir,
+        config.directories.tmp_dir,
+        config.directories.token_dir,
+        config.download.downloads_dir,
+    ]
+
+    for path in paths:
+        if "\0" in path:
+            logger.debug("Invalid path: {%s}", path)
+            raise ConfigError(f"Invalid path: {path}")
+
+    return True
 
 
 def resolve_dir(value: str, *, create: bool = True) -> Path:

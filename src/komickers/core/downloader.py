@@ -7,9 +7,8 @@ from typing import TextIO
 
 import httpx
 
+from komickers.core.extractor import extract_download_link
 from komickers.exceptions import DownloaderError, ExtractionError
-
-from .extractor import extract_download_link
 
 logger = logging.getLogger(__name__)
 
