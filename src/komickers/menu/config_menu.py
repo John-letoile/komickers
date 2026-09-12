@@ -21,7 +21,7 @@ def config_menu():
     try:
         update_config(
             tmp_dir=tmp_dir,
-            credentialss_dir=credentials_dir,
+            credentials_dir=credentials_dir,
             token_dir=token_dir,
             downloads_dir=downloads_dir,
             download_manager=download_manager,

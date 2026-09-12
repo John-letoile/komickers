@@ -123,6 +123,7 @@ def resolve_dir(value: str, *, create: bool = True) -> Path:
     - Creates the directory (and parents) unless create=False
     - Raises ConfigError early if the value is empty or cannot be created
     """
+
     if not value or not value.strip():
         raise ConfigError("Config directory value is empty")
 
@@ -157,13 +158,12 @@ def load_config() -> Config:
         return Config()
 
     with open(path, "r", encoding="utf-8") as f:
-        data = tomlkit.load(f)
-
-    try:
-        validate(_from_dict(data))
-    except ConfigError as ce:
-        logger.debug("Invalid config: %s", ce)
-        raise ConfigError(f"Invalid config: {ce}") from ce
+        data = tomlkit.load(f).unwrap()
+        try:
+            validate(_from_dict(data))
+        except ConfigError as ce:
+            logger.debug("Invalid config: %s", ce)
+            raise ConfigError(f"Invalid config: {ce}") from ce
 
     return _from_dict(data)
 
