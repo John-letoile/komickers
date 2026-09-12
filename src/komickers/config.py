@@ -15,10 +15,31 @@ _dirs = PlatformDirs(appname="komickers", appauthor=False)
 EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 
-class DownloadManger(Enum):
-    SURGE = 1
-    UGET = 2
-    WGET2 = 3
+def _get_default(section: str, subkey: str) -> str | list[str]:
+    default_directories_config: DirectoriesConfig = DirectoriesConfig()
+    default_download_config: DownloadConfig = DownloadConfig()
+    default_email_config: EmailConfig = EmailConfig()
+
+    if section == "directories":
+        return default_directories_config.to_dict()[subkey]
+
+    elif section == "download":
+        return default_download_config.to_dict()[subkey]
+
+    elif section == "email":
+        return default_email_config.to_dict()[subkey]
+
+    else:
+        logger.debug(
+            "Invalid default value call: [section]: %s, [subkey]: %s", section, subkey
+        )
+        raise ConfigError(f"Invalid config section/key value: [{section}] : [{subkey}]")
+
+
+class DownloadManager(Enum):
+    SURGE = "surge"
+    UGET = "uget"
+    WGET2 = "wget2"
 
 
 @dataclass
@@ -27,11 +48,17 @@ class DirectoriesConfig:
     credentials_dir: str = str(_dirs.user_config_dir)
     token_dir: str = str(Path(_dirs.user_cache_dir) / "token")
 
+    def to_dict(self) -> dict:
+        return asdict(self)
+
 
 @dataclass
 class DownloadConfig:
     downloads_dir: str = str(Path(_dirs.user_downloads_dir) / "Komickers")
     download_manager: str = "surge"
+
+    def to_dict(self) -> dict:
+        return asdict(self)
 
 
 @dataclass
@@ -40,6 +67,9 @@ class EmailConfig:
     email_address: str = ""
     provider: str = "noreply@leagueofcomicgeeks.com"
     app_password: str = ""
+
+    def to_dict(self) -> dict:
+        return asdict(self)
 
 
 @dataclass
@@ -59,13 +89,13 @@ def _config_path() -> Path:
 
 def validate(config: Config) -> bool:
     try:
-        DownloadManger(config.download.download_manager)
+        DownloadManager(config.download.download_manager)
     except ValueError as ve:
-        valid = [download_manager.value for download_manager in DownloadManger]
+        valid = [download_manager.value for download_manager in DownloadManager]
         logger.debug("Invalid download manager selection: %s", ve, exc_info=True)
         raise ConfigError(f"Invalid download manager. Must be one of: {valid}")
 
-    if not EMAIL_REGEX.match(config.email.email_address):
+    if config.email.email_address and not EMAIL_REGEX.match(config.email.email_address):
         logger.debug("Invalid email format: %s", config.email.email_address)
         raise ConfigError(f"Invalid email format: {config.email.email_address}")
 
@@ -129,6 +159,12 @@ def load_config() -> Config:
     with open(path, "r", encoding="utf-8") as f:
         data = tomlkit.load(f)
 
+    try:
+        validate(_from_dict(data))
+    except ConfigError as ce:
+        logger.debug("Invalid config: %s", ce)
+        raise ConfigError(f"Invalid config: {ce}") from ce
+
     return _from_dict(data)
 
 
@@ -136,8 +172,16 @@ def save_config(config: Config) -> None:
     path = _config_path()
     path.parent.mkdir(parents=True, exist_ok=True)
 
+    try:
+        validate(config)
+    except ConfigError as ce:
+        logger.debug("Invalid config: %s", ce)
+        raise ConfigError(f"Invalid config: {ce}")
+
     with open(path, "w", encoding="utf-8") as f:
         tomlkit.dump(config.to_dict(), f)
+
+    path.chmod(0o600)
 
 
 def update_config(**kwargs) -> None:
@@ -158,7 +202,14 @@ def update_config(**kwargs) -> None:
     for key, value in kwargs.items():
         if key in valid_keys:
             section, subkey = valid_keys[key]
-            config[section][subkey] = value
+            if value == "!":
+                pass
+
+            elif str(value).strip() == "":
+                config[section][subkey] = _get_default(section, subkey)
+
+            else:
+                config[section][subkey] = value
 
         else:
             logger.error("Invalid configuration: %s", key)

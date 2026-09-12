@@ -23,10 +23,12 @@ from komickers.mail_reader.reader import read_emails
 
 def pull_list_menu(config: Config) -> None:
     print("\n=================== PULL LIST MENU ===================\n")
-    resolve_dir(config.directories.tmp_dir)
 
+    # Create the temporary directory
+    resolve_dir(config.directories.tmp_dir)
     pull_list_path: Path | None = None
     pulled: bool = False
+
     while not pulled:
         try:
             print(

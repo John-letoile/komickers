@@ -76,6 +76,7 @@ def get_credentials(
 
         with open(token_file, "w", encoding="utf-8") as token:
             token.write(creds.to_json())
+            token_file.chmod(0o0600)
 
     return creds
 

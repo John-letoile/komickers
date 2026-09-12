@@ -19,7 +19,7 @@ def get_year(pull_list_name: str) -> str:
         logger.debug(
             "Incorrect pull list format '%s': %s", pull_list_name, ve, exc_info=True
         )
-        raise ExtractionError(f"Incorrect pull list format: {pull_list_name}")
+        raise ExtractionError(f"Incorrect pull list format: {pull_list_name}") from ve
 
     return pull_list_name[:4]
 
