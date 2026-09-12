@@ -203,10 +203,10 @@ def update_config(**kwargs) -> None:
         if key in valid_keys:
             section, subkey = valid_keys[key]
             if value == "!":
-                pass
+                config[section][subkey] = _get_default(section, subkey)
 
             elif str(value).strip() == "":
-                config[section][subkey] = _get_default(section, subkey)
+                pass
 
             else:
                 config[section][subkey] = value

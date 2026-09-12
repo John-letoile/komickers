@@ -9,7 +9,19 @@ from bs4 import BeautifulSoup
 from komickers.exceptions import ExtractionError
 
 logger = logging.getLogger(__name__)
-SPECIAL_CHARACTERS: tuple[str, ...] = ("#", "(", ")", "!", "?", ":", "&", '"', "'", "%")
+SPECIAL_CHARACTERS: tuple[str, ...] = (
+    "#",
+    "(",
+    ")",
+    "!",
+    "?",
+    ":",
+    "&",
+    '"',
+    "'",
+    "%",
+    ",",
+)
 
 
 def get_year(pull_list_name: str) -> str:
@@ -124,9 +136,32 @@ def extract_download_link(file_path: Path, comic_name: str) -> str:
 
     server_side_url: str | None = None
     with httpx.Client() as client:
-        response = client.head(download_url, follow_redirects=False, timeout=10)
+        try:
+            response = client.head(download_url, follow_redirects=False, timeout=10)
+        except httpx.RequestError as re:
+            logger.debug(
+                "Network error fetching download link for '%s': %s",
+                comic_name,
+                re,
+                exc_info=True,
+            )
+            raise ExtractionError(
+                f"Network error while fetching download link ford '{comic_name}'"
+            )
+
         if response.status_code in (301, 302, 303, 307, 308):
             server_side_url = response.headers.get("location")
+            if not server_side_url:
+                logger.debug(
+                    "Redirect without Location header for %s (status %d)",
+                    file_path,
+                    response.status_code,
+                )
+                raise ExtractionError(
+                    f"Redirect missing Location header for '{comic_name}'"
+                ) from None
+        elif response.is_success:
+            server_side_url = str(response.url)
         else:
             logger.debug(
                 "Failed to extract download link for %s: %d",
@@ -134,11 +169,8 @@ def extract_download_link(file_path: Path, comic_name: str) -> str:
                 response.status_code,
             )
             raise ExtractionError(
-                f"Failed to extract download link for '{comic_name}'"
+                f"Failed to extract download link for '{comic_name}' "
+                f"(status {response.status_code})"
             ) from None
-
-    if server_side_url is None:
-        logger.warning("The server response missed a 'location' field")
-        raise ExtractionError("The server response missed a 'location' field")
 
     return server_side_url
