@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import httpx
+
 from komickers.config import Config, resolve_dir
 from komickers.core.downloader import (
     Inventory,
@@ -10,7 +12,7 @@ from komickers.core.extractor import formatter
 from komickers.exceptions import DownloaderError
 
 
-def download_menu(config: Config) -> None:
+def download_menu(config: Config, client: httpx.Client) -> None:
     print("\n==================== DOWNLOAD MENU ===================\n")
     print(
         "Please provide a text file containing the download links of the comics to be downloaded."
@@ -39,7 +41,7 @@ def download_menu(config: Config) -> None:
     pull_list: list[tuple[str, str]] = [(name, formatter(year, name)) for name in names]
     inbox_path = resolve_dir(config.download.downloads_dir)
     method = config.download.download_manager
-    inventory: Inventory = extract_comics_from_file(index_dir, pull_list)
+    inventory: Inventory = extract_comics_from_file(index_dir, pull_list, client)
 
     try:
         download_from_inventory(inventory, inbox_path, method)

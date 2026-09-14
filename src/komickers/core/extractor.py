@@ -117,7 +117,9 @@ def extract_selection_list_from_file(
     return names
 
 
-def extract_download_link(file_path: Path, comic_name: str) -> str:
+def extract_download_link(
+    file_path: Path, comic_name: str, client: httpx.Client
+) -> str:
     with open(file_path, "r", encoding="utf-8") as f:
         soup = BeautifulSoup(f, "html.parser")
 
@@ -135,42 +137,41 @@ def extract_download_link(file_path: Path, comic_name: str) -> str:
         raise ExtractionError(f"Download link has no URL in {file_path.name}") from None
 
     server_side_url: str | None = None
-    with httpx.Client() as client:
-        try:
-            response = client.head(download_url, follow_redirects=False, timeout=10)
-        except httpx.RequestError as re:
-            logger.debug(
-                "Network error fetching download link for '%s': %s",
-                comic_name,
-                re,
-                exc_info=True,
-            )
-            raise ExtractionError(
-                f"Network error while fetching download link ford '{comic_name}'"
-            )
+    try:
+        response = client.head(download_url, follow_redirects=False, timeout=10)
+    except httpx.RequestError as re:
+        logger.debug(
+            "Network error fetching download link for '%s': %s",
+            comic_name,
+            re,
+            exc_info=True,
+        )
+        raise ExtractionError(
+            f"Network error while fetching download link ford '{comic_name}'"
+        )
 
-        if response.status_code in (301, 302, 303, 307, 308):
-            server_side_url = response.headers.get("location")
-            if not server_side_url:
-                logger.debug(
-                    "Redirect without Location header for %s (status %d)",
-                    file_path,
-                    response.status_code,
-                )
-                raise ExtractionError(
-                    f"Redirect missing Location header for '{comic_name}'"
-                ) from None
-        elif response.is_success:
-            server_side_url = str(response.url)
-        else:
+    if response.status_code in (301, 302, 303, 307, 308):
+        server_side_url = response.headers.get("location")
+        if not server_side_url:
             logger.debug(
-                "Failed to extract download link for %s: %d",
+                "Redirect without Location header for %s (status %d)",
                 file_path,
                 response.status_code,
             )
             raise ExtractionError(
-                f"Failed to extract download link for '{comic_name}' "
-                f"(status {response.status_code})"
+                f"Redirect missing Location header for '{comic_name}'"
             ) from None
+    elif response.is_success:
+        server_side_url = str(response.url)
+    else:
+        logger.debug(
+            "Failed to extract download link for %s: %d",
+            file_path,
+            response.status_code,
+        )
+        raise ExtractionError(
+            f"Failed to extract download link for '{comic_name}' "
+            f"(status {response.status_code})"
+        ) from None
 
     return server_side_url

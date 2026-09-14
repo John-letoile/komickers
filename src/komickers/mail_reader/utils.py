@@ -81,6 +81,31 @@ def get_credentials(
     return creds
 
 
+def verify_credentials(creds: Credentials, expected_email: str) -> bool:
+    """Fetches the email address associated with a Gmail-scoped token."""
+    try:
+        from googleapiclient.discovery import build
+        from googleapiclient.errors import HttpError
+    except ImportError as e:
+        raise ImportError(
+            "The 'google' optional dependencies is required to use OAuth2"
+        ) from e
+
+    try:
+        service = build("gmail", "v1", credentials=creds)
+        profile = service.users().getProfile(userId="me").execute()
+        token_email = profile.get("emailAddress")
+
+        if not token_email:
+            raise EmailError("Gmail profile did not include an email address")
+
+        return token_email.strip().lower() == expected_email.strip().lower()
+
+    except HttpError as httpe:
+        logger.debug("Failed to fetch Gmail profile: %s", httpe, exc_info=True)
+        raise EmailError("Failed to fetch Gmail profile")
+
+
 def parse_pull_list_date(text: str | None) -> str | None:
     if not text:
         return None

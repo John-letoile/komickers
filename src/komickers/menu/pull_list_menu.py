@@ -1,5 +1,7 @@
 from pathlib import Path
 
+import httpx
+
 from komickers.config import Config, resolve_dir
 from komickers.core.downloader import (
     Inventory,
@@ -21,7 +23,7 @@ from komickers.exceptions import (
 from komickers.mail_reader.reader import read_emails
 
 
-def pull_list_menu(config: Config) -> None:
+def pull_list_menu(config: Config, client: httpx.Client) -> None:
     print("\n=================== PULL LIST MENU ===================\n")
 
     # Create the temporary directory
@@ -112,7 +114,9 @@ def pull_list_menu(config: Config) -> None:
     )
 
     try:
-        inventory: Inventory = extract_comics_from_file(pull_list_path, selection_names)
+        inventory: Inventory = extract_comics_from_file(
+            pull_list_path, selection_names, client
+        )
         download_from_inventory(inventory, inbox_path, method)
     except DownloaderError as de:
         print(de)

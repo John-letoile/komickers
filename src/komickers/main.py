@@ -3,6 +3,9 @@ import logging
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+import time
+
+import httpx
 
 from platformdirs import PlatformDirs
 
@@ -92,29 +95,30 @@ def main():
         "Welcome to Komickers, True Believer!\nYour hub for getting your comics, fast and easy.\n"
     )
 
-    while True:
-        print(
-            "1) Change Config\n2) Pull latest pull list\n3) Download pull list\nq) Quit\n"
-        )
-        menu_selection = input("please select a menu: ")
-        match menu_selection:
-            case "1":
-                config_menu()
-                try:
-                    config = load_config()
-                except ConfigError as ce:
-                    print(ce)
-            case "2":
-                pull_list_menu(config)
-            case "3":
-                download_menu(config)
-            case "q":
-                break
-            case _:
-                print(
-                    "\n=============================="
-                    "\n|Please select a correct menu|"
-                    "\n==============================\n"
-                )
+    with httpx.Client(follow_redirects=True, timeout=10.0) as client:
+        while True:
+            print(
+                "1) Change Config\n2) Pull latest pull list\n3) Download pull list\nq) Quit\n"
+            )
+            menu_selection = input("please select a menu: ")
+            match menu_selection:
+                case "1":
+                    config_menu()
+                    try:
+                        config = load_config()
+                    except ConfigError as ce:
+                        print(ce)
+                case "2":
+                    pull_list_menu(config, client)
+                case "3":
+                    download_menu(config, clinet)
+                case "q":
+                    break
+                case _:
+                    print(
+                        "\n=============================="
+                        "\n|Please select a correct menu|"
+                        "\n==============================\n"
+                    )
 
     print("Excelsior!")

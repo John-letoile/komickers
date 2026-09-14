@@ -21,7 +21,10 @@ class Inventory:
 
 
 def save_html_file(
-    comic_name: str, comic_name_formatted: str, pull_list_path: Path
+    comic_name: str,
+    comic_name_formatted: str,
+    pull_list_path: Path,
+    client: httpx.Client,
 ) -> Path:
     url: str = f"https://getcomics.org/marvel{comic_name_formatted}"
     tmp_html_dir: Path = pull_list_path / "comics_indexes"
@@ -33,20 +36,15 @@ def save_html_file(
         logger.info("the HTML file for '%s' already exists. Skipping...", comic_name)
         return file_path
 
-    with httpx.Client() as client:
-        try:
-            response: httpx.Response = client.get(
-                url, follow_redirects=True, timeout=10
-            )
-            response.raise_for_status()
+    try:
+        response: httpx.Response = client.get(url, follow_redirects=True, timeout=10)
+        response.raise_for_status()
 
-        except httpx.HTTPError as httpe:
-            logger.debug(
-                "Failed to fetch html file for %s: %s", comic_name, httpe, exc_info=True
-            )
-            raise ExtractionError(
-                f"Failed to fetch html file for {comic_name}"
-            ) from httpe
+    except httpx.HTTPError as httpe:
+        logger.debug(
+            "Failed to fetch html file for %s: %s", comic_name, httpe, exc_info=True
+        )
+        raise ExtractionError(f"Failed to fetch html file for {comic_name}") from httpe
 
     output = response.content
     file_path.write_bytes(output)
@@ -168,7 +166,7 @@ def _log_missed_comics(missed_comics: list[str], missed_file: TextIO, comic: str
 
 
 def extract_comics_from_file(
-    tmp_path: Path, pull_list: list[tuple[str, str]]
+    tmp_path: Path, pull_list: list[tuple[str, str]], client: httpx.Client
 ) -> Inventory:
     misses: list[str] = []
     hits: list[str] = []
@@ -190,9 +188,11 @@ def extract_comics_from_file(
         for comic in pull_list:
             logger.info("Trying to find '%s'", comic[0])
             try:
-                comic_html_file = save_html_file(comic[0], comic[1], tmp_path)
+                comic_html_file = save_html_file(comic[0], comic[1], tmp_path, client)
                 logger.info("Found page. Extracting download link for '%s'", comic[0])
-                extracted_comic_link = extract_download_link(comic_html_file, comic[0])
+                extracted_comic_link = extract_download_link(
+                    comic_html_file, comic[0], client
+                )
                 logger.info("Successfully extracted download link for '%s'", comic[0])
                 hits.append(comic[0])
                 pulled_file.write(f"{extracted_comic_link}\n")
