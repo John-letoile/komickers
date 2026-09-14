@@ -3,10 +3,9 @@ import logging
 import sys
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
-import time
 
 import httpx
-
+from httpx_retries import Retry, RetryTransport
 from platformdirs import PlatformDirs
 
 from komickers.config import Config, load_config
@@ -95,7 +94,11 @@ def main():
         "Welcome to Komickers, True Believer!\nYour hub for getting your comics, fast and easy.\n"
     )
 
-    with httpx.Client(follow_redirects=True, timeout=10.0) as client:
+    with httpx.Client(
+        follow_redirects=True,
+        transport=RetryTransport(retry=Retry(total=3, backoff_factor=0.5)),
+        timeout=10.0,
+    ) as client:
         while True:
             print(
                 "1) Change Config\n2) Pull latest pull list\n3) Download pull list\nq) Quit\n"
@@ -111,7 +114,7 @@ def main():
                 case "2":
                     pull_list_menu(config, client)
                 case "3":
-                    download_menu(config, clinet)
+                    download_menu(config, client)
                 case "q":
                     break
                 case _:

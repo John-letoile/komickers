@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def get_credentials(
     token_path: Path, credentials_path: Path, scopes: list[str]
-) -> Credentials | None:
+) -> Credentials:
     try:
         from google.auth.exceptions import RefreshError, TransportError
         from google.auth.transport.requests import Request
