@@ -78,7 +78,7 @@ def pull_list_menu(config: Config, client: httpx.Client) -> None:
     method: str = config.download.download_manager
 
     try:
-        pull_list: list[tuple[str, str]] = extract_names(index_path, inbox_path)
+        pull_list: list[tuple[str, str]] = extract_names(index_path, pull_list_path)
 
     except ExtractionError as ee:
         print(ee)
