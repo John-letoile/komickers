@@ -62,11 +62,12 @@ def pull_list_menu(config: Config, client: httpx.Client) -> None:
                 "\n^===============================^\n"
             )
 
-        except ImportError as ie:
-            print(ie)
-            selection = input("\nWould you like to download the dependencies? [N/y]")
-            if selection in {"y", "yes"}:
-                ...
+        except ImportError:
+            print(
+                "\nThe 'google' extra is required for this login method but is not installed."
+            )
+            print("Install the extra, then start Komickers again.")
+            return
 
     if pull_list_path is None:
         print("Couldn't determine the path of the pull list. Aborting...")
