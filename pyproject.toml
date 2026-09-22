@@ -29,7 +29,9 @@ google = [
     "google-auth-oauthlib>=1.2.2",
 ]
 
-all = ["komickers[dev,google]"]
+imap = ["keyring>=25.7.0"]
+
+all = ["komickers[dev,google,imap]"]
 
 [project.scripts]
 komickers = "komickers.main:main"

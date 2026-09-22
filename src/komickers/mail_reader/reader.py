@@ -2,12 +2,16 @@ from pathlib import Path
 
 from komickers.config import Config, resolve_dir
 from komickers.exceptions import AuthenticationError, ConfigError
+from komickers.mail_reader.credentials import (
+    get_app_password,
+    get_credentials,
+    verify_credentials,
+)
 from komickers.mail_reader.reader_google import read_emails as _read_emails_google
 from komickers.mail_reader.reader_imap import (
     read_emails_app_password as _read_emails_app_password,
 )
 from komickers.mail_reader.reader_imap import read_emails_oauth as _read_emails_oauth
-from komickers.mail_reader.utils import get_credentials, verify_credentials
 
 
 def _fetch_method_for_imap() -> str:
@@ -43,7 +47,7 @@ def read_emails(config: Config, login_method: str) -> Path:
         auth_method = _fetch_method_for_imap()
 
         if auth_method == "1":
-            app_password = config.email.app_password
+            app_password = get_app_password(email_address)
             return _read_emails_app_password(
                 email_address, app_password, provider, tmp_path
             )

@@ -8,7 +8,7 @@ def config_menu():
         "Please give your preference for each of these fields (for extra configuration, checkout the TOML file in .config)"
     )
     print(
-        "Any blank fields with '!' will be filled with their respective default values, and empty inputs will keep its current valu:\n"
+        "Any blank fields with '!' will be filled with their respective default values, and empty inputs will keep its current value:\n"
     )
 
     tmp_dir = input("Temp Files Directory: ")

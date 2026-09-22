@@ -66,7 +66,6 @@ class EmailConfig:
     scopes: list[str] = field(default_factory=lambda: ["https://mail.google.com/"])
     email_address: str = ""
     provider: str = "noreply@leagueofcomicgeeks.com"
-    app_password: str = ""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -196,7 +195,6 @@ def update_config(**kwargs) -> None:
         "scopes": ("email", "scopes"),
         "email_address": ("email", "email_address"),
         "provider": ("email", "provider"),
-        "app_password": ("email", "app_password"),
     }
 
     for key, value in kwargs.items():

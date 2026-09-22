@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from komickers.exceptions import AuthenticationError, EmailError
 
@@ -121,3 +122,16 @@ def get_app_password(email_address: str) -> str:
     import getpass
 
     return getpass.getpass(f"Gmail app password for {email_address}: ")
+
+
+def set_app_password(email_address: str):
+    app_password: str = get_app_password(email_address)
+
+    if app_password and app_password != "!":
+        try:
+            import keyring
+
+            keyring.set_password("komickers", email_address, app_password)
+        except ImportError:
+            print("keyring not installed — the app password will NOT be saved.")
+            print("Install it with: uv sync --extra imap  (then re-enter it once)")

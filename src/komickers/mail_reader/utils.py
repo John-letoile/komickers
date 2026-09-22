@@ -2,7 +2,7 @@ import logging
 from datetime import UTC, datetime
 from pathlib import Path
 
-from komickers.exceptions import AuthenticationError, EmailError, NoPullListError
+from komickers.exceptions import NoPullListError
 
 logger = logging.getLogger(__name__)
 
