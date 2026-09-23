@@ -84,6 +84,10 @@ def extract_names(file_path: Path, tmp_path: Path) -> list[tuple[str, str]]:
             if "/comic/" not in href:
                 continue
 
+            class_name = link.get("class")
+            if class_name and class_name[0] == "brcampaign":
+                continue
+
             title = link.get("title")
 
             if title:
