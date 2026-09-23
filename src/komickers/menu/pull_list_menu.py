@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import httpx
 
@@ -90,9 +91,21 @@ def pull_list_menu(config: Config, client: httpx.Client) -> None:
     for i, comic in enumerate(pull_list, start=1):
         print(f"{i})", comic[0])
 
-    selection_input: str = input(
-        "\nprovide the index of the comics to search for (0 for exit, all for all of them): "
-    )
+    selection_flag: bool = False
+    selection_pattern = re.compile(r"^\d+(?:,\s*\d+)*$")
+    selection_input: str = ""
+
+    while not selection_flag:
+        selection_input: str = input(
+            "\nprovide the index of the comics to search for (0 for exit, all for all of them): "
+        ).rstrip()
+
+        if (
+            selection_input.rstrip() == "0"
+            or selection_input == "all"
+            or re.match(selection_pattern, selection_input)
+        ):
+            selection_flag = True
 
     selection_list: list[int]
     if selection_input == "0":

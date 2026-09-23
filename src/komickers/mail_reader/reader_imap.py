@@ -97,14 +97,14 @@ def read_emails_app_password(
 def read_emails_oauth(
     email_address: str, provider: str, tmp_path: Path, creds: Any
 ) -> Path:
-    auth_string = f"user={email_address}\x01auth=Bearer {creds.token}\x01"
+    auth_string = f"user={email_address}\x01auth=Bearer {creds.token}\x01\x01"
     first_call = True
 
     def xoauth2(_challenge: bytes) -> bytes:
         nonlocal first_call
         if first_call:
             first_call = False
-            return auth_string.encode()
+            return auth_string.encode("utf-8")
         return b""
 
     try:

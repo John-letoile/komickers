@@ -98,6 +98,9 @@ def main():
         follow_redirects=True,
         transport=RetryTransport(retry=Retry(total=3, backoff_factor=0.5)),
         timeout=10.0,
+        headers={
+            "User-Agent": "komickers/0.50.0 (https://github.com/John-letoile/komickers)"
+        },
     ) as client:
         while True:
             print(
